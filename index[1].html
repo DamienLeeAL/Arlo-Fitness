@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arlo — Training Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#0a0a0a;
+    --ink-soft:#151515;
+    --paper:#0a0a0a;
+    --paper-raised:#161616;
+    --rule:#3a3a3a;
+    --rule-soft:#262626;
+    --accent:#ff2436;
+    --accent-ink:#fefefe;
+    --good:#ffb020;
+    --muted:#9a9a9a;
+    --text:#f2f1ef;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    display:flex;
+    min-height:100vh;
+  }
+  h1,h2,h3,.num{
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:600;
+    letter-spacing:0.01em;
+  }
+  .num{ font-variant-numeric: tabular-nums; }
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  /* ---------- Nav rail ---------- */
+  nav.rail{
+    width:220px;
+    flex-shrink:0;
+    background:var(--ink);
+    color:var(--paper-raised);
+    display:flex;
+    flex-direction:column;
+    position:sticky;
+    top:0;
+    height:100vh;
+  }
+  .wordmark{
+    padding:1.6rem 1.4rem 1.2rem;
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:700;
+    font-size:2rem;
+    letter-spacing:0.02em;
+    border-bottom:1px solid #262626;
+  }
+  .wordmark span{color:var(--accent);}
+  .rail-nav{list-style:none;margin:0;padding:0.6rem 0;flex:1;}
+  .rail-nav li{margin:0;}
+  .rail-nav button{
+    width:100%;
+    text-align:left;
+    background:none;
+    border:none;
+    color:#cfcfcf;
+    font-size:1rem;
+    padding:0.7rem 1.4rem;
+    cursor:pointer;
+    border-left:3px solid transparent;
+    display:flex;
+    align-items:center;
+    gap:0.6rem;
+  }
+  .rail-nav button:hover{color:var(--paper-raised);}
+  .rail-nav button.active{
+    color:var(--paper-raised);
+    border-left-color:var(--accent);
+    background:#1a1a1a;
+  }
+  .rail-nav svg{width:16px;height:16px;flex-shrink:0;opacity:0.85;}
+  .rail-foot{
+    padding:1rem 1.4rem 1.4rem;
+    font-size:0.8rem;
+    color:#6b6b6b;
+    border-top:1px solid #262626;
+  }
+
+  /* ---------- Main ---------- */
+  main{
+    flex:1;
+    padding:2.2rem 3rem 4rem;
+    max-width:980px;
+  }
+  header.page-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:1px solid var(--rule);
+    padding-bottom:0.9rem;
+    margin-bottom:1.8rem;
+  }
+  header.page-head h1{font-size:2.1rem;margin:0;}
+  header.page-head .date{color:var(--muted);font-size:0.95rem;}
+  section.view{display:none;}
+  section.view.active{display:block;}
+
+  /* ---------- Scoreboard hero ---------- */
+  .hero-row{
+    display:grid;
+    grid-template-columns:1.1fr 1fr 1fr;
+    gap:1px;
+    background:var(--rule);
+    border:1px solid var(--rule);
+    margin-bottom:2rem;
+  }
+  .hero-cell{
+    background:var(--paper-raised);
+    padding:1.2rem 1.4rem;
+  }
+  .hero-cell .num{font-size:3rem;line-height:1;color:var(--ink);}
+  .hero-cell .num small{font-size:1.1rem;font-weight:500;color:var(--muted);margin-left:0.3rem;}
+  .hero-cell .label{color:var(--muted);font-size:0.9rem;margin-top:0.3rem;}
+  .hero-cell.accent{background:var(--ink);color:var(--paper-raised);}
+  .hero-cell.accent .num{color:var(--accent);}
+  .hero-cell.accent .label{color:#c9c3c3;}
+
+  /* ---------- Ledger rows ---------- */
+  .ledger{border-top:1px solid var(--rule);}
+  .ledger-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0.75rem 0;
+    border-bottom:1px solid var(--rule-soft);
+    gap:1rem;
+  }
+  .ledger-row .main-txt{font-weight:500;}
+  .ledger-row .sub-txt{color:var(--muted);font-size:0.85rem;}
+  .ledger-row .right{text-align:right;flex-shrink:0;}
+  .ledger-row .right .num{font-size:1.3rem;}
+  .empty-row{padding:1rem 0;color:var(--muted);font-style:italic;}
+
+  h2.section-title{
+    font-size:1.4rem;
+    margin:2.2rem 0 0.8rem;
+  }
+  h2.section-title:first-of-type{margin-top:0;}
+
+  /* ---------- Forms ---------- */
+  .panel{
+    background:var(--paper-raised);
+    border:1px solid var(--rule);
+    padding:1.3rem 1.5rem;
+    margin-bottom:1.6rem;
+  }
+  .field-row{display:flex;gap:0.8rem;margin-bottom:0.7rem;flex-wrap:wrap;}
+  .field{display:flex;flex-direction:column;gap:0.25rem;flex:1;min-width:120px;}
+  .field label{font-size:0.8rem;color:var(--muted);}
+  .field input,.field select,.field textarea{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:0.95rem;
+    padding:0.5rem 0.6rem;
+    border:1px solid var(--rule);
+    background:#141414;
+    color:var(--text);
+  }
+  .field input::placeholder,.field textarea::placeholder{color:#6b6b6b;}
+  .field textarea{resize:vertical;min-height:2.4rem;}
+  .sched-textarea{min-height:5.5rem;resize:vertical;line-height:1.5;}
+  .exercise-row{
+    display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;
+  }
+  .exercise-row input{flex:1;}
+  input[type="text"],input[type="number"],input[type="date"],input[type="time"]{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:0.95rem;
+    padding:0.5rem 0.6rem;
+    border:1px solid var(--rule);
+    background:#141414;
+    color:var(--text);
+  }
+  input::placeholder{color:#6b6b6b;}
+  .btn{
+    display:inline-block;
+    background:var(--accent);
+    color:var(--accent-ink);
+    border:none;
+    padding:0.55rem 1.1rem;
+    font-size:0.95rem;
+    cursor:pointer;
+    font-weight:500;
+  }
+  .btn:hover{background:#cc1524;}
+  .btn.ghost{
+    background:none;
+    border:1px solid var(--rule);
+    color:var(--text);
+  }
+  .btn.ghost:hover{border-color:var(--ink);}
+  .btn.small{padding:0.3rem 0.6rem;font-size:0.85rem;}
+  .btn.remove{background:none;border:1px solid var(--rule-soft);color:var(--muted);padding:0.3rem 0.55rem;}
+
+  /* ---------- Progress / charts ---------- */
+  .chart-wrap{
+    background:var(--paper-raised);
+    border:1px solid var(--rule);
+    padding:1.2rem;
+    margin-bottom:1.6rem;
+  }
+  .chart-wrap h3{margin:0 0 0.8rem;font-size:1.1rem;}
+  canvas{max-width:100%;}
+
+  /* ---------- Coach view ---------- */
+  .coach-panel{
+    display:flex;
+    gap:1.6rem;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .coach-note{
+    background:var(--ink);
+    color:var(--paper-raised);
+    padding:1.6rem;
+    flex:1;
+    min-width:260px;
+  }
+  .coach-note h3{color:var(--accent);margin-top:0;}
+  .coach-note p{line-height:1.5;color:#c9c9c9;}
+
+  @media (max-width: 760px){
+    html,body{width:100%;overflow-x:hidden;}
+    body{flex-direction:column;}
+    nav.rail{
+      width:100%;
+      height:auto;
+      position:sticky;
+      top:0;
+      z-index:100;
+      flex-direction:row;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      border-bottom:1px solid #262626;
+    }
+    .wordmark{display:none;}
+    .rail-nav{
+      display:flex;
+      padding:0;
+      width:max-content;
+      min-width:100%;
+    }
+    .rail-nav li{flex:0 0 auto;}
+    .rail-nav button{
+      width:auto;
+      min-width:88px;
+      text-align:center;
+      justify-content:center;
+      border-left:none;
+      border-bottom:3px solid transparent;
+      padding:0.75rem 0.8rem;
+      white-space:nowrap;
+      touch-action:manipulation;
+    }
+    .rail-nav button.active{
+      border-left:none;
+      border-bottom-color:var(--accent);
+    }
+    .rail-foot{display:none;}
+    main{
+      width:100%;
+      max-width:none;
+      padding:1.25rem 1rem 3rem;
+    }
+    header.page-head{
+      align-items:flex-start;
+      gap:0.75rem;
+      flex-wrap:wrap;
+    }
+    header.page-head h1{font-size:1.9rem;}
+    .hero-row{grid-template-columns:1fr;}
+    .hero-cell{padding:1rem 1.1rem;}
+    .hero-cell .num{font-size:2.5rem;}
+    .panel,.chart-wrap{padding:1rem;}
+    .field-row{gap:0.65rem;}
+    .field{min-width:min(100%, 140px);}
+    .exercise-row{
+      flex-wrap:wrap;
+      align-items:stretch;
+    }
+    .exercise-row input:first-child{flex-basis:100%;}
+    .exercise-row input{min-width:0;flex:1;}
+    .exercise-row .remove{align-self:center;}
+    .btn{min-height:44px;touch-action:manipulation;}
+    .btn.small,.btn.remove{min-height:40px;}
+    input,select,textarea{max-width:100%;}
+    .coach-panel{gap:1rem;}
+  }
+  @media (max-width: 420px){
+    main{padding-left:0.85rem;padding-right:0.85rem;}
+    .rail-nav button{min-width:82px;padding-left:0.65rem;padding-right:0.65rem;font-size:0.9rem;}
+    .field{min-width:100%;}
+    .field[style*="max-width"]{max-width:100% !important;}
+    .hero-row[style*="repeat(4"]{grid-template-columns:1fr 1fr !important;}
+    .hero-row[style*="repeat(4"] .hero-cell{min-width:0;}
+    .ledger-row{gap:0.65rem;}
+    .ledger-row .right .num{font-size:1.15rem;}
+  }
+  .mobile-scroll-hint{display:none;}
+  @media (max-width: 760px){
+    .mobile-scroll-hint{
+      display:block;
+      color:var(--muted);
+      font-size:0.72rem;
+      text-align:center;
+      margin:-0.45rem 0 0.8rem;
+      opacity:0.75;
+    }
+  }
+</style>
+
+  <meta name="theme-color" content="#0b0d10">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Arlo Fitness">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+<nav class="rail">
+  <div class="wordmark">arlo<span>.</span></div>
+  <ul class="rail-nav" id="railNav">
+    <li><button data-view="dashboard" class="active">Dashboard</button></li>
+    <li><button data-view="workouts">Workouts</button></li>
+    <li><button data-view="schedule">Schedule</button></li>
+    <li><button data-view="nutrition">Nutrition</button></li>
+    <li><button data-view="progress">Progress</button></li>
+    <li><button data-view="coach">Coach</button></li>
+  </ul>
+  <div class="rail-foot">training log, kept daily</div>
+<button class="navBtn" onclick="openPage('alarms')">⏰ <span>Alarms</span></button>
+</nav>
+
+<main>
+  <div class="mobile-scroll-hint" aria-hidden="true">Swipe the tabs above to switch sections</div>
+
+  <!-- DASHBOARD -->
+  <section class="view active" id="view-dashboard">
+    <header class="page-head">
+      <h1>Dashboard</h1>
+      <div class="date" id="todayLabel"></div>
+    </header>
+
+    <h2 class="section-title" style="margin-top:0;">Today's plan</h2>
+    <div class="ledger">
+      <div class="ledger-row" id="todayPlanBox"></div>
+    </div>
+
+    <div class="hero-row">
+      <div class="hero-cell accent">
+        <div class="num" id="streakNum">0<small>days</small></div>
+        <div class="label">current streak</div>
+      </div>
+      <div class="hero-cell">
+        <div class="num" id="calNum">0<small>/ 0 kcal</small></div>
+        <div class="label">logged today</div>
+      </div>
+      <div class="hero-cell">
+        <div class="num" id="weightNum">—<small>lb</small></div>
+        <div class="label">latest weight</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Recent workouts</h2>
+    <div class="ledger" id="recentWorkouts"></div>
+
+    <div class="coach-panel" style="margin-top:2rem;">
+      <div class="coach-note">
+        <h3>Ask Arlo</h3>
+        <p>Arlo can see the log you're keeping here — pull up the chat in the corner or head to the Coach tab for a check-in on today's session.</p>
+        <button class="btn ghost" style="border-color:#3a3a3a;color:var(--paper-raised);" onclick="openArlo()">Open Arlo</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORKOUTS -->
+  <section class="view" id="view-workouts">
+    <header class="page-head">
+      <h1>Workouts</h1>
+      <div class="date" id="workoutCount"></div>
+    </header>
+
+    <div class="panel">
+      <h2 class="section-title" style="margin-top:0;">Log a session</h2>
+      <div class="field-row">
+        <div class="field">
+          <label for="wName">Session name</label>
+          <input type="text" id="wName" placeholder="Upper body, Leg day, Run...">
+        </div>
+        <div class="field" style="max-width:140px;">
+          <label for="wDuration">Duration (min)</label>
+          <input type="number" id="wDuration" min="0">
+        </div>
+        <div class="field" style="max-width:160px;">
+          <label for="wDate">Date</label>
+          <input type="date" id="wDate">
+        </div>
+      </div>
+
+      <label style="font-size:0.8rem;color:var(--muted);">Exercises</label>
+      <div id="exerciseRows"></div>
+      <button class="btn ghost small" onclick="addExerciseRow()">+ Add exercise</button>
+
+      <div class="field" style="margin-top:0.8rem;">
+        <label for="wNotes">Notes</label>
+        <textarea id="wNotes" placeholder="How it felt, anything to remember..."></textarea>
+      </div>
+
+      <button class="btn" style="margin-top:0.8rem;" onclick="saveWorkout()">Log workout</button>
+    </div>
+
+    <h2 class="section-title">History</h2>
+    <div class="ledger" id="workoutLedger"></div>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section class="view" id="view-schedule">
+    <header class="page-head">
+      <h1>Schedule</h1>
+      <div class="date" id="todayLabel5"></div>
+    </header>
+
+    <div class="panel">
+      <h2 class="section-title" style="margin-top:0;">Weekly plan</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin:-0.3rem 0 1rem;">Set what you're doing each day. It shows up as "Today's plan" on your dashboard, and Arlo can reference it when you check in.</p>
+      <div id="scheduleRows"></div>
+      <button class="btn" style="margin-top:0.6rem;" onclick="saveSchedule()">Save schedule</button>
+      <span id="scheduleSavedMsg" style="display:none;margin-left:0.8rem;color:var(--good);font-size:0.9rem;">Saved ✓</span>
+    </div>
+  </section>
+
+  <!-- NUTRITION -->
+  <section class="view" id="view-nutrition">
+    <header class="page-head">
+      <h1>Nutrition</h1>
+      <div class="date" id="todayLabel2"></div>
+    </header>
+
+    <div class="panel">
+      <h2 class="section-title" style="margin-top:0;">Log a meal</h2>
+      <div class="field-row">
+        <div class="field">
+          <label for="mName">Meal</label>
+          <input type="text" id="mName" placeholder="Chicken bowl, protein shake...">
+        </div>
+        <div class="field" style="max-width:120px;">
+          <label for="mCal">Calories</label>
+          <input type="number" id="mCal" min="0">
+        </div>
+        <div class="field" style="max-width:100px;">
+          <label for="mProtein">Protein (g)</label>
+          <input type="number" id="mProtein" min="0">
+        </div>
+        <div class="field" style="max-width:100px;">
+          <label for="mCarbs">Carbs (g)</label>
+          <input type="number" id="mCarbs" min="0">
+        </div>
+        <div class="field" style="max-width:100px;">
+          <label for="mFat">Fat (g)</label>
+          <input type="number" id="mFat" min="0">
+        </div>
+      </div>
+      <button class="btn" onclick="saveMeal()">Log meal</button>
+    </div>
+
+    <h2 class="section-title">Today's totals</h2>
+    <div class="hero-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="hero-cell"><div class="num" id="tCal">0</div><div class="label">calories</div></div>
+      <div class="hero-cell"><div class="num" id="tProtein">0<small>g</small></div><div class="label">protein</div></div>
+      <div class="hero-cell"><div class="num" id="tCarbs">0<small>g</small></div><div class="label">carbs</div></div>
+      <div class="hero-cell"><div class="num" id="tFat">0<small>g</small></div><div class="label">fat</div></div>
+    </div>
+
+    <h2 class="section-title">Meals today</h2>
+    <div class="ledger" id="mealLedger"></div>
+
+    <div class="panel" style="margin-top:1.6rem;max-width:460px;">
+      <h2 class="section-title" style="margin-top:0;">Your numbers</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin:-0.3rem 0 0.9rem;">No manual limit to set — Arlo works out your daily target from this, plus your latest logged weight.</p>
+      <div class="field-row">
+        <div class="field" style="max-width:110px;">
+          <label for="pHeight">Height (in)</label>
+          <input type="number" id="pHeight" min="0">
+        </div>
+        <div class="field" style="max-width:90px;">
+          <label for="pAge">Age</label>
+          <input type="number" id="pAge" min="0">
+        </div>
+        <div class="field" style="max-width:130px;">
+          <label for="pSex">Sex</label>
+          <select id="pSex">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="pActivity">Activity level</label>
+          <select id="pActivity">
+            <option value="sedentary">Sedentary — little exercise</option>
+            <option value="light">Light — 1–3 days/wk</option>
+            <option value="moderate">Moderate — 3–5 days/wk</option>
+            <option value="active">Active — 6–7 days/wk</option>
+            <option value="veryActive">Very active — physical job or 2x/day</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="pGoal">Goal</label>
+          <select id="pGoal">
+            <option value="lose">Lose weight</option>
+            <option value="maintain">Maintain</option>
+            <option value="gain">Build muscle</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn small" onclick="saveProfile()">Save</button>
+      <div id="targetReadout" style="margin-top:1rem;"></div>
+    </div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section class="view" id="view-progress">
+    <header class="page-head">
+      <h1>Progress</h1>
+      <div class="date" id="todayLabel3"></div>
+    </header>
+
+    <div class="panel">
+      <h2 class="section-title" style="margin-top:0;">Log weight</h2>
+      <div class="field-row">
+        <div class="field" style="max-width:140px;">
+          <label for="wgtVal">Weight (lb)</label>
+          <input type="number" id="wgtVal" step="0.1" min="0">
+        </div>
+        <div class="field" style="max-width:160px;">
+          <label for="wgtDate">Date</label>
+          <input type="date" id="wgtDate">
+        </div>
+      </div>
+      <button class="btn" onclick="saveWeight()">Log weight</button>
+    </div>
+
+    <div class="chart-wrap">
+      <h3>Weight trend</h3>
+      <canvas id="weightChart" height="90"></canvas>
+    </div>
+
+    <div class="chart-wrap">
+      <h3>Weekly training volume</h3>
+      <canvas id="volumeChart" height="90"></canvas>
+    </div>
+  </section>
+
+  <!-- COACH -->
+  <section class="view" id="view-coach">
+    <header class="page-head">
+      <h1>Coach</h1>
+      <div class="date" id="todayLabel4"></div>
+    </header>
+
+    <div class="coach-panel">
+      <div class="coach-note">
+        <h3>Arlo</h3>
+        <p>Arlo has context on the sessions, meals, and weigh-ins you log here. Use the chat bubble in the bottom corner to check in, ask for a session plan, or talk through how the week's going.</p>
+        <button class="btn" onclick="openArlo()">Open the chat</button>
+      </div>
+      <div class="coach-note" style="background:var(--paper-raised);color:var(--text);">
+        <h3 style="color:var(--accent);">This week at a glance</h3>
+        <div class="ledger" id="coachSummary" style="border-top:none;"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ---------------- Data layer ---------------- */
+const STORE_KEY = 'arlo_tracker_data_v1';
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ console.error('Could not read saved data', e); }
+  return { workouts: [], meals: [], weights: [], goals: {}, profile: {}, schedule: {} };
+}
+function saveData(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+  catch(e){ console.error('Could not save data', e); }
+}
+let data = loadData();
+if(!data.goals) data.goals = {};
+if(!data.profile) data.profile = {};
+if(!data.schedule) data.schedule = {};
+
+const SCHED_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const SCHED_DAY_LABELS = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
+const SCHED_DAY_KEY_BY_JS_INDEX = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function localDateStr(date = new Date()){
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+const todayStr = () => localDateStr();
+const fmtDate = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
+
+/* ---------------- Navigation ---------------- */
+document.getElementById('railNav').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-view]');
+  if(!btn) return;
+  switchView(btn.dataset.view);
+});
+
+function setDateLabels(){
+  const label = new Date().toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
+  ['todayLabel','todayLabel2','todayLabel3','todayLabel4','todayLabel5'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = label;
+  });
+  document.getElementById('wDate').value = todayStr();
+  document.getElementById('wgtDate').value = todayStr();
+}
+
+/* ---------------- Workouts ---------------- */
+function addExerciseRow(vals){
+  const wrap = document.getElementById('exerciseRows');
+  const row = document.createElement('div');
+  row.className = 'exercise-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Exercise" class="ex-name" value="${vals?vals.name:''}">
+    <input type="number" placeholder="Sets" class="ex-sets" style="max-width:70px;" value="${vals?vals.sets:''}">
+    <input type="number" placeholder="Reps" class="ex-reps" style="max-width:70px;" value="${vals?vals.reps:''}">
+    <input type="number" placeholder="Weight" class="ex-weight" style="max-width:80px;" value="${vals?vals.weight:''}">
+    <button class="btn remove" onclick="this.parentElement.remove()">×</button>
+  `;
+  wrap.appendChild(row);
+}
+function saveWorkout(){
+  const name = document.getElementById('wName').value.trim();
+  if(!name){ alert('Give the session a name.'); return; }
+  const duration = Number(document.getElementById('wDuration').value) || 0;
+  const date = document.getElementById('wDate').value || todayStr();
+  const notes = document.getElementById('wNotes').value.trim();
+  const exercises = [...document.querySelectorAll('#exerciseRows .exercise-row')].map(row=>({
+    name: row.querySelector('.ex-name').value.trim(),
+    sets: Number(row.querySelector('.ex-sets').value) || 0,
+    reps: Number(row.querySelector('.ex-reps').value) || 0,
+    weight: Number(row.querySelector('.ex-weight').value) || 0,
+  })).filter(ex=>ex.name);
+
+  data.workouts.push({ id: Date.now(), name, duration, date, notes, exercises });
+  saveData();
+  document.getElementById('wName').value = '';
+  document.getElementById('wDuration').value = '';
+  document.getElementById('wNotes').value = '';
+  document.getElementById('exerciseRows').innerHTML = '';
+  document.getElementById('wDate').value = todayStr();
+  renderAll();
+}
+function deleteWorkout(id){
+  data.workouts = data.workouts.filter(w=>w.id !== id);
+  saveData();
+  renderAll();
+}
+
+function renderWorkouts(){
+  const sorted = [...data.workouts].sort((a,b)=> b.date.localeCompare(a.date) || b.id - a.id);
+  document.getElementById('workoutCount').textContent = sorted.length + ' logged';
+
+  const ledger = document.getElementById('workoutLedger');
+  ledger.innerHTML = '';
+  if(sorted.length === 0){
+    ledger.innerHTML = '<div class="empty-row">No sessions logged yet. Add your first above.</div>';
+  }
+  sorted.forEach(w=>{
+    const volume = w.exercises.reduce((s,ex)=> s + ex.sets*ex.reps*ex.weight, 0);
+    const exList = w.exercises.map(ex=> `${ex.name} — ${ex.sets}×${ex.reps}${ex.weight?` @ ${ex.weight}lb`:''}`).join(', ');
+    const row = document.createElement('div');
+    row.className = 'ledger-row';
+    row.innerHTML = `
+      <div>
+        <div class="main-txt">${w.name}</div>
+        <div class="sub-txt">${fmtDate(w.date)}${w.duration?` · ${w.duration} min`:''}${exList?` · ${exList}`:''}</div>
+      </div>
+      <div class="right">
+        <div class="num">${volume ? volume.toLocaleString() : (w.duration||'—')}</div>
+        <div class="sub-txt">${volume ? 'lb volume' : 'min'}</div>
+      </div>
+      <button class="btn remove" onclick="deleteWorkout(${w.id})">×</button>
+    `;
+    ledger.appendChild(row);
+  });
+
+  // recent 3 for dashboard
+  const recent = document.getElementById('recentWorkouts');
+  recent.innerHTML = '';
+  if(sorted.length === 0){
+    recent.innerHTML = '<div class="empty-row">Nothing logged yet — log your first session on the Workouts tab.</div>';
+  }
+  sorted.slice(0,3).forEach(w=>{
+    const row = document.createElement('div');
+    row.className = 'ledger-row';
+    row.innerHTML = `
+      <div>
+        <div class="main-txt">${w.name}</div>
+        <div class="sub-txt">${fmtDate(w.date)}</div>
+      </div>
+      <div class="right"><div class="num">${w.duration||'—'}</div><div class="sub-txt">min</div></div>
+    `;
+    recent.appendChild(row);
+  });
+}
+
+/* ---------------- Nutrition ---------------- */
+function saveMeal(){
+  const name = document.getElementById('mName').value.trim();
+  if(!name){ alert('Name the meal.'); return; }
+  const meal = {
+    id: Date.now(),
+    date: todayStr(),
+    name,
+    calories: Number(document.getElementById('mCal').value) || 0,
+    protein: Number(document.getElementById('mProtein').value) || 0,
+    carbs: Number(document.getElementById('mCarbs').value) || 0,
+    fat: Number(document.getElementById('mFat').value) || 0,
+  };
+  data.meals.push(meal);
+  saveData();
+  ['mName','mCal','mProtein','mCarbs','mFat'].forEach(id=> document.getElementById(id).value = '');
+  renderAll();
+}
+function deleteMeal(id){
+  data.meals = data.meals.filter(m=>m.id !== id);
+  saveData();
+  renderAll();
+}
+function activityMultiplier(level){
+  return { sedentary:1.2, light:1.375, moderate:1.55, active:1.725, veryActive:1.9 }[level] || 1.2;
+}
+function computeCalorieTarget(){
+  const p = data.profile || {};
+  const latestWeight = data.weights[data.weights.length-1];
+  if(!p.height || !p.age || !latestWeight) return null;
+  const weightKg = latestWeight.value * 0.453592;
+  const heightCm = p.height * 2.54;
+  let bmr = 10*weightKg + 6.25*heightCm - 5*p.age + (p.sex === 'female' ? -161 : 5);
+  let tdee = bmr * activityMultiplier(p.activity || 'moderate');
+  if(p.goal === 'lose') tdee -= 500;
+  else if(p.goal === 'gain') tdee += 300;
+  return Math.round(tdee);
+}
+function saveProfile(){
+  data.profile.height = Number(document.getElementById('pHeight').value) || null;
+  data.profile.age = Number(document.getElementById('pAge').value) || null;
+  data.profile.sex = document.getElementById('pSex').value;
+  data.profile.activity = document.getElementById('pActivity').value;
+  data.profile.goal = document.getElementById('pGoal').value;
+  saveData();
+  renderAll();
+}
+function populateProfileFields(){
+  const p = data.profile || {};
+  document.getElementById('pHeight').value = p.height || '';
+  document.getElementById('pAge').value = p.age || '';
+  document.getElementById('pSex').value = p.sex || 'male';
+  document.getElementById('pActivity').value = p.activity || 'moderate';
+  document.getElementById('pGoal').value = p.goal || 'maintain';
+}
+function renderNutrition(){
+  const target = computeCalorieTarget();
+  const todays = data.meals.filter(m=>m.date === todayStr());
+  const totals = todays.reduce((acc,m)=>{
+    acc.cal += m.calories; acc.p += m.protein; acc.c += m.carbs; acc.f += m.fat; return acc;
+  }, {cal:0,p:0,c:0,f:0});
+
+  document.getElementById('tCal').textContent = totals.cal;
+  document.getElementById('tProtein').innerHTML = totals.p + '<small>g</small>';
+  document.getElementById('tCarbs').innerHTML = totals.c + '<small>g</small>';
+  document.getElementById('tFat').innerHTML = totals.f + '<small>g</small>';
+  document.getElementById('calNum').innerHTML = totals.cal + '<small>/ ' + (target ? target : '—') + ' kcal</small>';
+
+  const readout = document.getElementById('targetReadout');
+  if(target){
+    readout.innerHTML = `<div class="ledger-row" style="border-top:1px solid var(--rule);padding:0.8rem 0 0;margin-top:0.4rem;"><div class="main-txt">Your daily target</div><div class="right num" style="font-size:1.6rem;">${target}<small style="font-size:1rem;"> kcal</small></div></div>`;
+  } else {
+    readout.innerHTML = '<div class="empty-row" style="padding:0.6rem 0 0;">Add your height and age above, and log a weight on the Progress tab, to get your target.</div>';
+  }
+
+  const ledger = document.getElementById('mealLedger');
+  ledger.innerHTML = '';
+  if(todays.length === 0){
+    ledger.innerHTML = '<div class="empty-row">Nothing logged today yet.</div>';
+  }
+  todays.forEach(m=>{
+    const row = document.createElement('div');
+    row.className = 'ledger-row';
+    row.innerHTML = `
+      <div>
+        <div class="main-txt">${m.name}</div>
+        <div class="sub-txt">P ${m.protein}g · C ${m.carbs}g · F ${m.fat}g</div>
+      </div>
+      <div class="right"><div class="num">${m.calories}</div><div class="sub-txt">kcal</div></div>
+      <button class="btn remove" onclick="deleteMeal(${m.id})">×</button>
+    `;
+    ledger.appendChild(row);
+  });
+}
+
+/* ---------------- Weight / Progress ---------------- */
+function saveWeight(){
+  const val = Number(document.getElementById('wgtVal').value);
+  if(!val){ alert('Enter a weight.'); return; }
+  const date = document.getElementById('wgtDate').value || todayStr();
+  data.weights = data.weights.filter(w=>w.date !== date);
+  data.weights.push({ date, value: val });
+  data.weights.sort((a,b)=> a.date.localeCompare(b.date));
+  saveData();
+  document.getElementById('wgtVal').value = '';
+  document.getElementById('wgtDate').value = todayStr();
+  renderAll();
+}
+
+let weightChartInst, volumeChartInst;
+function renderCharts(){
+  const wCtx = document.getElementById('weightChart');
+  const wLabels = data.weights.map(w=>fmtDate(w.date));
+  const wValues = data.weights.map(w=>w.value);
+  if(weightChartInst) weightChartInst.destroy();
+  weightChartInst = new Chart(wCtx, {
+    type:'line',
+    data:{ labels:wLabels, datasets:[{ label:'Weight (lb)', data:wValues, borderColor:'#ff2436', backgroundColor:'rgba(255,36,54,0.15)', tension:0.25, fill:true, pointRadius:3 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{color:'#b3b3b3'}, grid:{color:'#262626'} }, x:{ ticks:{color:'#b3b3b3'}, grid:{color:'#262626'} } } }
+  });
+
+  // weekly volume last 8 weeks
+  const weekMap = {};
+  data.workouts.forEach(w=>{
+    const d = new Date(w.date+'T00:00:00');
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - ((d.getDay()+6)%7));
+    const key = monday.toISOString().slice(0,10);
+    const vol = w.exercises.reduce((s,ex)=> s + ex.sets*ex.reps*ex.weight, 0);
+    weekMap[key] = (weekMap[key]||0) + vol;
+  });
+  const weekKeys = Object.keys(weekMap).sort().slice(-8);
+  const vCtx = document.getElementById('volumeChart');
+  if(volumeChartInst) volumeChartInst.destroy();
+  volumeChartInst = new Chart(vCtx, {
+    type:'bar',
+    data:{ labels: weekKeys.map(k=>fmtDate(k)), datasets:[{ label:'Volume (lb)', data: weekKeys.map(k=>weekMap[k]), backgroundColor:'#ffb020' }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{color:'#b3b3b3'}, grid:{color:'#262626'} }, x:{ ticks:{color:'#b3b3b3'}, grid:{color:'#262626'} } } }
+  });
+}
+
+/* ---------------- Schedule ---------------- */
+function buildScheduleRows(){
+  const wrap = document.getElementById('scheduleRows');
+  if(!wrap){ console.error('scheduleRows container not found'); return; }
+  try{
+    wrap.innerHTML = SCHED_DAYS.map(d => `
+      <div class="field-row" style="align-items:flex-end;border-bottom:1px solid var(--rule-soft);padding-bottom:0.8rem;">
+        <div class="field" style="max-width:120px;flex:none;">
+          <div style="font-size:0.95rem;color:var(--text);">${SCHED_DAY_LABELS[d]}</div>
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;color:var(--text);margin-top:0.35rem;">
+            <input type="checkbox" id="sched-${d}-rest" onchange="toggleRestRow('${d}')"> Rest day
+          </label>
+        </div>
+        <div class="field">
+          <label for="sched-${d}-workout">Workout</label>
+          <textarea id="sched-${d}-workout" class="sched-textarea" placeholder="Bench press 3x10
+Incline DB press 3x12
+Cable fly 3x15"></textarea>
+        </div>
+        <div class="field" style="max-width:130px;">
+          <label for="sched-${d}-time">Time</label>
+          <input type="time" id="sched-${d}-time">
+        </div>
+      </div>
+    `).join('');
+  }catch(err){
+    console.error('buildScheduleRows failed:', err);
+    wrap.innerHTML = '<div class="empty-row">Could not load the schedule form. Open the browser console (F12) and send Claude the red error text.</div>';
+  }
+}
+function toggleRestRow(d){
+  const rest = document.getElementById(`sched-${d}-rest`).checked;
+  document.getElementById(`sched-${d}-workout`).disabled = rest;
+  document.getElementById(`sched-${d}-time`).disabled = rest;
+}
+function populateScheduleFields(){
+  SCHED_DAYS.forEach(d=>{
+    const entry = (data.schedule && data.schedule[d]) || {};
+    document.getElementById(`sched-${d}-rest`).checked = !!entry.rest;
+    document.getElementById(`sched-${d}-workout`).value = entry.workout || '';
+    document.getElementById(`sched-${d}-time`).value = entry.time || '';
+    toggleRestRow(d);
+  });
+}
+function saveSchedule(){
+  const sched = {};
+  SCHED_DAYS.forEach(d=>{
+    sched[d] = {
+      rest: document.getElementById(`sched-${d}-rest`).checked,
+      workout: document.getElementById(`sched-${d}-workout`).value.trim(),
+      time: document.getElementById(`sched-${d}-time`).value,
+    };
+  });
+  data.schedule = sched;
+  saveData();
+  renderAll();
+  const msg = document.getElementById('scheduleSavedMsg');
+  if(msg){
+    msg.style.display = 'inline';
+    clearTimeout(window._scheduleSavedTimer);
+    window._scheduleSavedTimer = setTimeout(()=>{ msg.style.display = 'none'; }, 2200);
+  }
+}
+function getTodayDayKey(){
+  return SCHED_DAY_KEY_BY_JS_INDEX[new Date().getDay()];
+}
+function renderTodayPlan(){
+  const todayKey = getTodayDayKey();
+  const entry = (data.schedule && data.schedule[todayKey]) || {};
+  const box = document.getElementById('todayPlanBox');
+  if(entry.rest){
+    box.innerHTML = `<div><div class="main-txt">Rest day</div><div class="sub-txt">Nothing scheduled — recovery is part of the plan.</div></div>`;
+  } else if(entry.workout && entry.workout.trim()){
+    const lines = entry.workout.split('\n').map(l=>l.trim()).filter(Boolean);
+    const list = lines.length > 1
+      ? `<ul style="margin:0.4rem 0 0 1.1rem;padding:0;color:var(--text);">${lines.map(l=>`<li style="margin-bottom:0.2rem;">${l}</li>`).join('')}</ul>`
+      : `<div class="sub-txt" style="margin-top:0.2rem;">${lines[0]||''}</div>`;
+    box.innerHTML = `
+      <div>
+        <div class="main-txt">${entry.time ? entry.time + ' — ' : ''}Today's session</div>
+        ${list}
+      </div>
+      <button class="btn small" onclick="quickLogScheduled('${todayKey}')">Log it</button>
+    `;
+  } else {
+    box.innerHTML = `<div><div class="main-txt">Nothing scheduled</div><div class="sub-txt"><a href="#" onclick="goToSchedule(event)" style="color:var(--accent);">Set your weekly plan →</a></div></div>`;
+  }
+}
+function switchView(name){
+  document.querySelectorAll('.rail-nav button').forEach(b=>b.classList.remove('active'));
+  const navBtn = document.querySelector(`.rail-nav button[data-view="${name}"]`);
+  if(navBtn) navBtn.classList.add('active');
+  document.querySelectorAll('section.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  if(name === 'progress') renderCharts();
+}
+function quickLogScheduled(dayKey){
+  const entry = (data.schedule && data.schedule[dayKey]) || {};
+  const lines = (entry.workout||'').split('\n').map(l=>l.trim()).filter(Boolean);
+  switchView('workouts');
+  document.getElementById('wName').value = lines[0] || '';
+  document.getElementById('wNotes').value = lines.slice(1).join('\n');
+  document.getElementById('wDate').value = todayStr();
+}
+function goToSchedule(e){
+  e.preventDefault();
+  switchView('schedule');
+}
+
+/* ---------------- Dashboard bits ---------------- */
+function computeStreak(){
+  const dates = new Set(data.workouts.map(w=>w.date));
+  let streak = 0;
+  let cursor = new Date();
+  while(true){
+    const iso = cursor.toISOString().slice(0,10);
+    if(dates.has(iso)){ streak++; cursor.setDate(cursor.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+function renderDashboardStats(){
+  document.getElementById('streakNum').innerHTML = computeStreak() + '<small>days</small>';
+  const latestWeight = data.weights[data.weights.length-1];
+  document.getElementById('weightNum').innerHTML = (latestWeight? latestWeight.value : '—') + '<small>lb</small>';
+}
+
+function renderCoachSummary(){
+  const wrap = document.getElementById('coachSummary');
+  wrap.innerHTML = '';
+  const now = new Date();
+  const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-6);
+  const weekWorkouts = data.workouts.filter(w=> new Date(w.date+'T00:00:00') >= weekAgo);
+  const target = computeCalorieTarget();
+  const items = [
+    { label:'Sessions this week', value: weekWorkouts.length },
+    { label:'Current streak', value: computeStreak() + ' days' },
+    { label:'Daily target', value: target ? target + ' kcal' : 'Add your numbers' },
+  ];
+  items.forEach(it=>{
+    const row = document.createElement('div');
+    row.className = 'ledger-row';
+    row.innerHTML = `<div class="main-txt">${it.label}</div><div class="right num" style="font-size:1.1rem;">${it.value}</div>`;
+    wrap.appendChild(row);
+  });
+}
+
+function openArlo(){
+  try{
+    if(window.botpressWebChat){
+      window.botpressWebChat.sendEvent({ type: 'show' });
+      return;
+    }
+  }catch(e){}
+  alert("Arlo's chat is unavailable in this browser session. The tracker itself will still work normally.");
+}
+
+/* ---------------- Render orchestration ---------------- */
+function renderAll(){
+  renderWorkouts();
+  renderNutrition();
+  renderDashboardStats();
+  renderCoachSummary();
+  renderTodayPlan();
+}
+
+setDateLabels();
+try{
+  buildScheduleRows();
+  populateScheduleFields();
+  populateProfileFields();
+  renderAll();
+}catch(err){
+  console.error('Arlo tracker init failed:', err);
+}
+</script>
+
+<!-- Arlo chat widget -->
+<script src="https://cdn.botpress.cloud/webchat/v5.0/inject.js"></script>
+<script
+  src="https://files.bpcontent.cloud/2026/09/16/22/20260916223631-8K9O2T2S.js"
+  defer>
+</script>
+
+
+<script>
+const ALARM_KEY='arlo_tracker_alarms_v1';
+const getAlarms=()=>{try{return JSON.parse(localStorage.getItem(ALARM_KEY)||'[]')}catch(e){return[]}};
+const setAlarms=a=>localStorage.setItem(ALARM_KEY,JSON.stringify(a));
+function setAlarmStatus(s){const e=document.getElementById('alarmStatus');if(e)e.textContent=s}
+async function requestAlarmPermission(){
+  if(!('Notification'in window)){setAlarmStatus('This browser does not support web notifications.');return false}
+  const p=await Notification.requestPermission();
+  setAlarmStatus(p==='granted'?'Notifications enabled.':'Notifications are blocked. Enable them in browser settings.');
+  return p==='granted';
+}
+function openAlarmForm(){document.getElementById('alarmName')?.focus();document.getElementById('alarms')?.scrollIntoView({behavior:'smooth'})}
+function saveAlarm(){
+  const name=document.getElementById('alarmName').value.trim()||'Arlo Reminder',time=document.getElementById('alarmTime').value;
+  const repeat=document.getElementById('alarmRepeat').value,message=document.getElementById('alarmMessage').value.trim()||name;
+  if(!time){setAlarmStatus('Pick a time first.');return}
+  const a=getAlarms();a.push({id:Date.now(),name,time,repeat,message,enabled:true});setAlarms(a);renderAlarms();scheduleWebReminderSoon();setAlarmStatus('Reminder saved.');
+  document.getElementById('alarmName').value='';document.getElementById('alarmTime').value='';document.getElementById('alarmMessage').value='';
+}
+function toggleAlarm(id){const a=getAlarms(),x=a.find(v=>v.id===id);if(x){x.enabled=!x.enabled;setAlarms(a);renderAlarms();scheduleWebReminderSoon()}}
+function deleteAlarm(id){setAlarms(getAlarms().filter(x=>x.id!==id));renderAlarms()}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderAlarms(){
+ const box=document.getElementById('alarmList');if(!box)return;const a=getAlarms();
+ if(!a.length){box.innerHTML='<h3>No reminders yet.</h3><p class="muted">Add one above. Your reminders stay saved in this browser/app.</p>';return}
+ box.innerHTML='<h3>Your reminders</h3>'+a.map(x=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);flex-wrap:wrap"><div><strong>${escapeHtml(x.name)}</strong><div style="font-size:1.5rem;font-weight:800">${x.time}</div><div class="muted">${({once:'Once',daily:'Every day',weekdays:'Weekdays',weekends:'Weekends'})[x.repeat]} · ${escapeHtml(x.message)}</div></div><div style="display:flex;gap:8px"><button class="btn" onclick="toggleAlarm(${x.id})">${x.enabled?'ON':'OFF'}</button><button class="btn" onclick="deleteAlarm(${x.id})">Delete</button></div></div>`).join('')
+}
+function nextAlarmDate(time){
+ const d=new Date(),[h,m]=time.split(':').map(Number);d.setHours(h,m,0,0);if(d<=new Date())d.setDate(d.getDate()+1);return d
+}
+function showReminder(a){if('Notification'in window&&Notification.permission==='granted')new Notification(a.name,{body:a.message,icon:'icon.svg',tag:'arlo-'+a.id})}
+let reminderTimer;
+function scheduleWebReminderSoon(){
+ clearTimeout(reminderTimer);const a=getAlarms().filter(x=>x.enabled);if(!a.length)return;
+ const now=new Date();let best=null,ms=Infinity;
+ for(const x of a){const d=nextAlarmDate(x.time),delta=d-now;if(delta<ms){ms=delta;best=x}}
+ reminderTimer=setTimeout(()=>{const x=getAlarms().find(v=>v.id===best.id);if(x&&x.enabled)showReminder(x);scheduleWebReminderSoon()},Math.min(ms,2147483647))
+}
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+window.addEventListener('load',()=>{renderAlarms();scheduleWebReminderSoon()});
+</script>
+
+</body>
+</html>
